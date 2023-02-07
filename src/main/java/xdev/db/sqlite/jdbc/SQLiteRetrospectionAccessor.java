@@ -17,8 +17,6 @@
  */
 package xdev.db.sqlite.jdbc;
 
-
-
 import com.xdev.jadoth.sqlengine.dbms.standard.StandardRetrospectionAccessor;
 import com.xdev.jadoth.sqlengine.exceptions.SQLEngineException;
 import com.xdev.jadoth.sqlengine.internal.tables.SqlIndex;
@@ -29,12 +27,11 @@ public class SQLiteRetrospectionAccessor extends StandardRetrospectionAccessor<S
 {
 	
 	public static final String RETROSPECTION_NOT_IMPLEMENTED_YET = "Retrospection not implemented yet!";
-
+	
 	public SQLiteRetrospectionAccessor(final SQLiteDbms dbmsadaptor)
 	{
 		super(dbmsadaptor);
 	}
-	
 	
 	/**
 	 * @see com.xdev.jadoth.sqlengine.dbms.DbmsRetrospectionAccessor#createSelect_INFORMATION_SCHEMA_COLUMNS(com.xdev.jadoth.sqlengine.internal.tables.SqlTableIdentity)
@@ -45,7 +42,6 @@ public class SQLiteRetrospectionAccessor extends StandardRetrospectionAccessor<S
 		throw new RuntimeException(RETROSPECTION_NOT_IMPLEMENTED_YET);
 	}
 	
-	
 	/**
 	 * @see com.xdev.jadoth.sqlengine.dbms.DbmsRetrospectionAccessor#createSelect_INFORMATION_SCHEMA_INDICES(com.xdev.jadoth.sqlengine.internal.tables.SqlTableIdentity)
 	 */
@@ -54,7 +50,6 @@ public class SQLiteRetrospectionAccessor extends StandardRetrospectionAccessor<S
 	{
 		throw new RuntimeException(RETROSPECTION_NOT_IMPLEMENTED_YET);
 	}
-	
 	
 	/**
 	 * @throws SQLEngineException
@@ -65,5 +60,4 @@ public class SQLiteRetrospectionAccessor extends StandardRetrospectionAccessor<S
 	{
 		throw new RuntimeException(RETROSPECTION_NOT_IMPLEMENTED_YET);
 	}
-	
 }

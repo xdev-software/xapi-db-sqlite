@@ -17,9 +17,6 @@
  */
 package xdev.db.sqlite.jdbc;
 
-
-
-
 import static com.xdev.jadoth.sqlengine.internal.QueryPart.ASEXPRESSION;
 import static com.xdev.jadoth.sqlengine.internal.QueryPart.indent;
 import static com.xdev.jadoth.sqlengine.internal.QueryPart.isSingleLine;
@@ -29,6 +26,7 @@ import com.xdev.jadoth.sqlengine.dbms.standard.StandardDMLAssembler;
 import com.xdev.jadoth.sqlengine.internal.SqlExpression;
 import com.xdev.jadoth.sqlengine.internal.SqlFunctionMOD;
 
+
 public class SQLiteDMLAssembler extends StandardDMLAssembler<SQLiteDbms>
 {
 	public SQLiteDMLAssembler(final SQLiteDbms dbms)
@@ -36,37 +34,38 @@ public class SQLiteDMLAssembler extends StandardDMLAssembler<SQLiteDbms>
 		super(dbms);
 	}
 	
-	
 	// /////////////////////////////////////////////////////////////////////////
 	// override methods //
 	// ///////////////////
+	
 	/**
 	 * @see StandardDMLAssembler#assembleSELECT(SELECT, StringBuilder, int, int, String, String)
 	 */
 	@Override
-	protected StringBuilder assembleSELECT(final SELECT query, final StringBuilder sb,
-			final int indentLevel, final int flags, final String clauseSeperator,
-			final String newLine)
+	protected StringBuilder assembleSELECT(
+		final SELECT query, final StringBuilder sb,
+		final int indentLevel, final int flags, final String clauseSeperator,
+		final String newLine)
 	{
-		indent(sb,indentLevel,isSingleLine(flags)).append(query.keyword());
+		indent(sb, indentLevel, isSingleLine(flags)).append(query.keyword());
 		
-		this.assembleSelectDISTINCT(query,sb,indentLevel,flags);
-		this.assembleSelectItems(query,sb,flags,indentLevel,newLine);
-		this.assembleSelectSqlClauses(query,sb,indentLevel,flags | ASEXPRESSION,clauseSeperator, newLine);
-		this.assembleAppendSELECTs(query,sb,indentLevel,flags,clauseSeperator,newLine);
-		this.assembleSelectRowLimit(query,sb,flags,clauseSeperator,newLine,indentLevel);
+		this.assembleSelectDISTINCT(query, sb, indentLevel, flags);
+		this.assembleSelectItems(query, sb, flags, indentLevel, newLine);
+		this.assembleSelectSqlClauses(query, sb, indentLevel, flags | ASEXPRESSION, clauseSeperator, newLine);
+		this.assembleAppendSELECTs(query, sb, indentLevel, flags, clauseSeperator, newLine);
+		this.assembleSelectRowLimit(query, sb, flags, clauseSeperator, newLine, indentLevel);
 		
 		return sb;
 	}
-	
 	
 	/**
 	 * @see StandardDMLAssembler#assembleSelectRowLimit(SELECT, StringBuilder, int, String, String, int)
 	 */
 	@Override
-	protected StringBuilder assembleSelectRowLimit(final SELECT query, final StringBuilder sb,
-			final int flags, final String clauseSeperator, final String newLine,
-			final int indentLevel)
+	protected StringBuilder assembleSelectRowLimit(
+		final SELECT query, final StringBuilder sb,
+		final int flags, final String clauseSeperator, final String newLine,
+		final int indentLevel)
 	{
 		final Integer offset = query.getOffsetSkipCount();
 		final Integer limit = query.getFetchFirstRowCount();
@@ -90,10 +89,10 @@ public class SQLiteDMLAssembler extends StandardDMLAssembler<SQLiteDbms>
 		return sb;
 	}
 	
-	
 	@Override
-	public void assembleExpression(final SqlExpression expression, final StringBuilder sb,
-			final int indentLevel, final int flags)
+	public void assembleExpression(
+		final SqlExpression expression, final StringBuilder sb,
+		final int indentLevel, final int flags)
 	{
 		
 		if(expression instanceof SqlFunctionMOD)
@@ -104,8 +103,7 @@ public class SQLiteDMLAssembler extends StandardDMLAssembler<SQLiteDbms>
 		}
 		else
 		{
-			super.assembleExpression(expression,sb,indentLevel,flags);
+			super.assembleExpression(expression, sb, indentLevel, flags);
 		}
 	}
-	
 }

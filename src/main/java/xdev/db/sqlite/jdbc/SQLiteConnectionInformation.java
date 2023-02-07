@@ -17,14 +17,12 @@
  */
 package xdev.db.sqlite.jdbc;
 
-
-
-
 import java.io.File;
 
 import com.xdev.jadoth.sqlengine.dbms.DbmsConnectionInformation;
 
 import xdev.db.ConnectionInformation;
+
 
 public class SQLiteConnectionInformation extends ConnectionInformation<SQLiteDbms>
 {
@@ -32,19 +30,20 @@ public class SQLiteConnectionInformation extends ConnectionInformation<SQLiteDbm
 	// constructors //
 	// ///////////////////
 	
-	public SQLiteConnectionInformation(final String database, final String urlExtension,
-			final SQLiteDbms dbmsAdaptor)
+	public SQLiteConnectionInformation(
+		final String database, final String urlExtension,
+		final SQLiteDbms dbmsAdaptor)
 	{
-		super("",0,"","",database,urlExtension,dbmsAdaptor);
+		super("", 0, "", "", database, urlExtension, dbmsAdaptor);
 	}
-	
 	
 	// /////////////////////////////////////////////////////////////////////////
 	// getters //
 	// ///////////////////
+	
 	/**
 	 * Gets the database.
-	 * 
+	 *
 	 * @return the database
 	 */
 	public String getDatabase()
@@ -52,47 +51,45 @@ public class SQLiteConnectionInformation extends ConnectionInformation<SQLiteDbm
 		return this.getCatalog();
 	}
 	
-	
 	// /////////////////////////////////////////////////////////////////////////
 	// setters //
 	// ///////////////////
+	
 	/**
 	 * Sets the database.
-	 * 
-	 * @param database
-	 *            the database to set
+	 *
+	 * @param database the database to set
 	 */
 	public void setDatabase(final String database)
 	{
 		this.setCatalog(database);
 	}
 	
-	
 	// /////////////////////////////////////////////////////////////////////////
 	// override methods //
 	// ///////////////////
+	
 	/**
 	 * @see DbmsConnectionInformation#createJdbcConnectionUrl()
 	 */
 	@Override
 	public String createJdbcConnectionUrl()
 	{
-		String db = getDatabase();
+		String db = this.getDatabase();
 		File file = new File(db).getAbsoluteFile();
 		if(!file.exists())
 		{
-			String projectHome = System.getProperty("project.home",null);
+			final String projectHome = System.getProperty("project.home", null);
 			if(projectHome != null && projectHome.length() > 0)
 			{
-				file = new File(new File(projectHome),db);
+				file = new File(new File(projectHome), db);
 				db = file.getAbsolutePath();
 			}
 		}
 		
-		String url = "jdbc:sqlite:" + db;
-		return appendUrlExtension(url);
+		final String url = "jdbc:sqlite:" + db;
+		return this.appendUrlExtension(url);
 	}
-	
 	
 	/**
 	 * @see com.xdev.jadoth.sqlengine.dbms.DbmsConnectionInformation#getJdbcDriverClassName()

@@ -17,9 +17,6 @@
  */
 package xdev.db.sqlite.jdbc;
 
-
-
-
 import xdev.db.DBException;
 import xdev.db.jdbc.JDBCDataSource;
 
@@ -30,7 +27,6 @@ public class SQLiteJDBCDataSource extends JDBCDataSource<SQLiteJDBCDataSource, S
 	{
 		super(new SQLiteDbms());
 	}
-	
 	
 	@Override
 	public Parameter[] getDefaultParameters()
@@ -44,13 +40,11 @@ public class SQLiteJDBCDataSource extends JDBCDataSource<SQLiteJDBCDataSource, S
 		};
 	}
 	
-	
 	@Override
 	protected SQLiteConnectionInformation getConnectionInformation()
 	{
-		return new SQLiteConnectionInformation(getCatalog(),getUrlExtension(),getDbmsAdaptor());
+		return new SQLiteConnectionInformation(this.getCatalog(), this.getUrlExtension(), this.getDbmsAdaptor());
 	}
-	
 	
 	@Override
 	public SQLiteJDBCConnection openConnectionImpl() throws DBException
@@ -58,13 +52,11 @@ public class SQLiteJDBCDataSource extends JDBCDataSource<SQLiteJDBCDataSource, S
 		return new SQLiteJDBCConnection(this);
 	}
 	
-	
 	@Override
 	public SQLiteJDBCMetaData getMetaData() throws DBException
 	{
 		return new SQLiteJDBCMetaData(this);
 	}
-	
 	
 	@Override
 	public boolean canExport()

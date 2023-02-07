@@ -17,9 +17,6 @@
  */
 package xdev.db.sqlite.jdbc;
 
-
-
-
 import com.xdev.jadoth.sqlengine.dbms.standard.StandardDDLMapper;
 
 

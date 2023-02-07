@@ -17,28 +17,27 @@
  */
 package xdev.db.sqlite.jdbc;
 
-
-
 import com.xdev.jadoth.sqlengine.dbms.DbmsAdaptor;
 import com.xdev.jadoth.sqlengine.dbms.SQLExceptionParser;
 import com.xdev.jadoth.sqlengine.internal.DatabaseGateway;
 import com.xdev.jadoth.sqlengine.internal.tables.SqlTableIdentity;
 
+
 public class SQLiteDbms
-		extends
-		DbmsAdaptor.Implementation<SQLiteDbms, SQLiteDMLAssembler, SQLiteDDLMapper, SQLiteRetrospectionAccessor, SQLiteSyntax>
+	extends
+	DbmsAdaptor.Implementation<SQLiteDbms, SQLiteDMLAssembler, SQLiteDDLMapper, SQLiteRetrospectionAccessor,
+		SQLiteSyntax>
 {
 	// /////////////////////////////////////////////////////////////////////////
 	// constants //
 	// ///////////////////
 	
-	/** The Constant MAX_VARCHAR_LENGTH. */
-	protected static final int			MAX_VARCHAR_LENGTH		= Integer.MAX_VALUE;
-	
-	protected static final char			IDENTIFIER_DELIMITER	= '"';
-	
-	public static final SQLiteSyntax	SYNTAX					= new SQLiteSyntax();
-	
+	public static final SQLiteSyntax SYNTAX = new SQLiteSyntax();
+	/**
+	 * The Constant MAX_VARCHAR_LENGTH.
+	 */
+	protected static final int MAX_VARCHAR_LENGTH = Integer.MAX_VALUE;
+	protected static final char IDENTIFIER_DELIMITER = '"';
 	
 	// /////////////////////////////////////////////////////////////////////////
 	// constructors //
@@ -49,41 +48,36 @@ public class SQLiteDbms
 		this(new SQLExceptionParser.Body());
 	}
 	
-	
 	/**
-	 * @param sqlExceptionParser
-	 *            the sql exception parser
+	 * @param sqlExceptionParser the sql exception parser
 	 */
 	public SQLiteDbms(final SQLExceptionParser sqlExceptionParser)
 	{
-		super(sqlExceptionParser,false);
+		super(sqlExceptionParser, false);
 		this.setRetrospectionAccessor(new SQLiteRetrospectionAccessor(this));
 		this.setDMLAssembler(new SQLiteDMLAssembler(this));
 		this.setSyntax(SYNTAX);
 	}
 	
-	
 	/**
 	 * @see DbmsAdaptor#createConnectionInformation(String, int, String, String, String, String)
 	 */
 	@Override
-	public SQLiteConnectionInformation createConnectionInformation(final String host,
-			final int port, final String user, final String password, final String catalog, final String properties)
+	public SQLiteConnectionInformation createConnectionInformation(
+		final String host,
+		final int port, final String user, final String password, final String catalog, final String properties)
 	{
-		return new SQLiteConnectionInformation(catalog,properties, this);
+		return new SQLiteConnectionInformation(catalog, properties, this);
 	}
 	
-	
 	/**
-	 * HSQL does not support any means of calculating table columns selectivity
-	 * as far as it is known.
+	 * HSQL does not support any means of calculating table columns selectivity as far as it is known.
 	 */
 	@Override
 	public Object updateSelectivity(final SqlTableIdentity table)
 	{
 		return null;
 	}
-	
 	
 	/**
 	 * @see DbmsAdaptor#assembleTransformBytes(byte[], StringBuilder)
@@ -94,7 +88,6 @@ public class SQLiteDbms
 		return null;
 	}
 	
-	
 	/**
 	 * @see com.xdev.jadoth.sqlengine.dbms.DbmsAdaptor.Implementation#getRetrospectionAccessor()
 	 */
@@ -104,7 +97,6 @@ public class SQLiteDbms
 		throw new RuntimeException("HSQL Retrospection not implemented yet!");
 	}
 	
-	
 	/**
 	 * @see com.xdev.jadoth.sqlengine.dbms.DbmsAdaptor#initialize(com.xdev.jadoth.sqlengine.internal.DatabaseGateway)
 	 */
@@ -112,7 +104,6 @@ public class SQLiteDbms
 	public void initialize(final DatabaseGateway<SQLiteDbms> dbc)
 	{
 	}
-	
 	
 	/**
 	 * @see com.xdev.jadoth.sqlengine.dbms.DbmsAdaptor#rebuildAllIndices(java.lang.String)
@@ -123,13 +114,11 @@ public class SQLiteDbms
 		return null;
 	}
 	
-	
 	@Override
 	public boolean supportsOFFSET_ROWS()
 	{
 		return true;
 	}
-	
 	
 	/**
 	 * @see com.xdev.jadoth.sqlengine.dbms.DbmsAdaptor#getMaxVARCHARlength()
@@ -139,7 +128,6 @@ public class SQLiteDbms
 	{
 		return MAX_VARCHAR_LENGTH;
 	}
-	
 	
 	@Override
 	public char getIdentifierDelimiter()

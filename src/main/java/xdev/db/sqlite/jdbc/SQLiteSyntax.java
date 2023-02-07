@@ -17,9 +17,6 @@
  */
 package xdev.db.sqlite.jdbc;
 
-
-
-
 import com.xdev.jadoth.sqlengine.dbms.DbmsSyntax;
 
 
@@ -27,7 +24,6 @@ public class SQLiteSyntax extends DbmsSyntax.Implementation<SQLiteDbms>
 {
 	protected SQLiteSyntax()
 	{
-		super(wordSet(),wordSet());
+		super(wordSet(), wordSet());
 	}
-	
 }

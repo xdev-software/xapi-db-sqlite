@@ -17,9 +17,6 @@
  */
 package xdev.db.sqlite.jdbc;
 
-
-
-
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -32,6 +29,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.xdev.jadoth.sqlengine.interfaces.ConnectionProvider;
 
 import xdev.db.ColumnMetaData;
 import xdev.db.DBException;
@@ -51,43 +50,80 @@ import xdev.vt.EntityRelationship;
 import xdev.vt.EntityRelationship.Entity;
 import xdev.vt.EntityRelationshipModel;
 
-import com.xdev.jadoth.sqlengine.interfaces.ConnectionProvider;
-
 
 public class SQLiteJDBCMetaData extends JDBCMetaData
 {
-	public SQLiteJDBCMetaData(SQLiteJDBCDataSource dataSource) throws DBException
+	public SQLiteJDBCMetaData(final SQLiteJDBCDataSource dataSource) throws DBException
 	{
 		super(dataSource);
 	}
 	
-	
-	@Override
-	protected String getSchema(JDBCDataSource dataSource)
+	private static void buildEntityRelationship(
+		final EntityRelationshipModel model,
+		final String pkTable,
+		final String fkTable,
+		final List<String> pkColumns,
+		final List<String> fkColumns)
 	{
-		return null;
+		model.add(new EntityRelationship(
+			new Entity(pkTable, pkColumns.toArray(new String[pkColumns.size()]), Cardinality.ONE),
+			new Entity(fkTable, fkColumns.toArray(new String[fkColumns.size()]), Cardinality.MANY))
+		);
+		pkColumns.clear();
+		fkColumns.clear();
 	}
 	
-	
-	@Override
-	protected String getCatalog(JDBCDataSource dataSource)
+	private static void fillIndices(
+		final Map<IndexInfo, Set<String>> indexMap,
+		final Index[] indices,
+		final int i,
+		final IndexInfo indexInfo)
 	{
-		return null;
+		final Set<String> columnList = indexMap.get(indexInfo);
+		final String[] indexColumns = columnList.toArray(new String[columnList.size()]);
+		indices[i] = new Index(indexInfo.name, indexInfo.type, indexColumns);
 	}
 	
-	
-	@Override
-	public EntityRelationshipModel getEntityRelationshipModel(ProgressMonitor monitor,
-			TableInfo... tableInfos) throws DBException
+	private static void fillDataTypeValues(
+		final Map<String, Object> defaultValues,
+		final Map<String, DataType> dataTypeValues,
+		final ResultSet rs)
+		throws SQLException
 	{
-		monitor.beginTask("",tableInfos.length);
+		final String columnName = rs.getString("COLUMN_NAME");
+		final Object defaultValue = rs.getObject("COLUMN_DEF");
+		defaultValues.put(columnName, defaultValue);
+		final int dataTypeValue = rs.getInt("DATA_TYPE");
+		final DataType dataType = DataType.get(dataTypeValue);
 		
-		EntityRelationshipModel model = new EntityRelationshipModel();
+		dataTypeValues.put(columnName, dataType);
+	}
+	
+	@Override
+	protected String getSchema(final JDBCDataSource dataSource)
+	{
+		return null;
+	}
+	
+	@Override
+	protected String getCatalog(final JDBCDataSource dataSource)
+	{
+		return null;
+	}
+	
+	@Override
+	public EntityRelationshipModel getEntityRelationshipModel(
+		final ProgressMonitor monitor,
+		final TableInfo... tableInfos) throws DBException
+	{
+		monitor.beginTask("", tableInfos.length);
+		
+		final EntityRelationshipModel model = new EntityRelationshipModel();
 		
 		try
 		{
-			List<String> tables = new ArrayList<>();
-			for(TableInfo table : tableInfos)
+			final List<String> tables = new ArrayList<>();
+			for(final TableInfo table : tableInfos)
 			{
 				if(table.getType() == TableType.TABLE)
 				{
@@ -96,16 +132,16 @@ public class SQLiteJDBCMetaData extends JDBCMetaData
 			}
 			Collections.sort(tables);
 			
-			ConnectionProvider connectionProvider = dataSource.getConnectionProvider();
+			final ConnectionProvider connectionProvider = this.dataSource.getConnectionProvider();
 			
-			try(Connection connection = connectionProvider.getConnection())
+			try(final Connection connection = connectionProvider.getConnection())
 			{
-				DatabaseMetaData meta = connection.getMetaData();
-				String catalog = getCatalog(dataSource);
-				String schema = getSchema(dataSource);
+				final DatabaseMetaData meta = connection.getMetaData();
+				final String catalog = this.getCatalog(this.dataSource);
+				final String schema = this.getSchema(this.dataSource);
 				int done = 0;
 				
-				for(String table : tables)
+				for(final String table : tables)
 				{
 					if(monitor.isCanceled())
 					{
@@ -114,16 +150,16 @@ public class SQLiteJDBCMetaData extends JDBCMetaData
 					
 					monitor.setTaskName(table);
 					
-					try(ResultSet rs = meta.getExportedKeys(catalog, schema, table))
+					try(final ResultSet rs = meta.getExportedKeys(catalog, schema, table))
 					{
 						String pkTable = null;
 						String fkTable = null;
-						List<String> pkColumns = new ArrayList<>();
-						List<String> fkColumns = new ArrayList<>();
+						final List<String> pkColumns = new ArrayList<>();
+						final List<String> fkColumns = new ArrayList<>();
 						
 						while(rs.next())
 						{
-							short keySeq = rs.getShort("KEY_SEQ");
+							final short keySeq = rs.getShort("KEY_SEQ");
 							
 							if(keySeq == 1
 								&& !pkColumns.isEmpty()
@@ -139,7 +175,6 @@ public class SQLiteJDBCMetaData extends JDBCMetaData
 							
 							pkColumns.add(rs.getString("PKCOLUMN_NAME").toUpperCase());
 							fkColumns.add(rs.getString("FKCOLUMN_NAME").toUpperCase());
-							
 						}
 						
 						if(!pkColumns.isEmpty()
@@ -155,9 +190,9 @@ public class SQLiteJDBCMetaData extends JDBCMetaData
 				}
 			}
 		}
-		catch(SQLException e)
+		catch(final SQLException e)
 		{
-			throw new DBException(dataSource,e);
+			throw new DBException(this.dataSource, e);
 		}
 		
 		monitor.done();
@@ -165,60 +200,45 @@ public class SQLiteJDBCMetaData extends JDBCMetaData
 		return model;
 	}
 	
-	private static void buildEntityRelationship(
-		EntityRelationshipModel model,
-		String pkTable,
-		String fkTable,
-		List<String> pkColumns,
-		List<String> fkColumns)
-	{
-		model.add(new EntityRelationship(
-			new Entity(pkTable, pkColumns.toArray(new String[pkColumns.size()]), Cardinality.ONE),
-			new Entity(fkTable, fkColumns.toArray(new String[fkColumns.size()]), Cardinality.MANY))
-		);
-		pkColumns.clear();
-		fkColumns.clear();
-	}
-	
 	@Override
-	protected TableMetaData getTableMetaData(JDBCConnection jdbcConnection, DatabaseMetaData meta,
-			int flags, TableInfo table) throws DBException, SQLException
+	protected TableMetaData getTableMetaData(
+		final JDBCConnection jdbcConnection, final DatabaseMetaData meta,
+		final int flags, final TableInfo table) throws DBException, SQLException
 	{
-		String catalog = getCatalog(dataSource);
-		String schema = getSchema(dataSource);
+		final String catalog = this.getCatalog(this.dataSource);
+		final String schema = this.getSchema(this.dataSource);
 		
-		String tableName = table.getName();
-		Table tableIdentity = new Table(tableName,"META_DUMMY");
+		final String tableName = table.getName();
+		final Table tableIdentity = new Table(tableName, "META_DUMMY");
 		
-		Map<String, Object> defaultValues = new HashMap<>();
-		Map<String, DataType> dataTypeValues = new HashMap<>();
+		final Map<String, Object> defaultValues = new HashMap<>();
+		final Map<String, DataType> dataTypeValues = new HashMap<>();
 		
-		ResultSet rs = meta.getColumns(catalog,schema,tableName,null);
+		ResultSet rs = meta.getColumns(catalog, schema, tableName, null);
 		while(rs.next())
 		{
 			fillDataTypeValues(defaultValues, dataTypeValues, rs);
 		}
 		rs.close();
 		
-		SELECT select = new SELECT().FROM(tableIdentity).WHERE("1 = 0");
+		final SELECT select = new SELECT().FROM(tableIdentity).WHERE("1 = 0");
 		Result result = jdbcConnection.query(select);
-		int cc = result.getColumnCount();
-		ColumnMetaData[] columns = new ColumnMetaData[cc];
+		final int cc = result.getColumnCount();
+		final ColumnMetaData[] columns = new ColumnMetaData[cc];
 		
 		for(int i = 0; i < cc; i++)
 		{
-			fillColumnMetaData(tableName, defaultValues, dataTypeValues, result, columns, i);
-			
+			this.fillColumnMetaData(tableName, defaultValues, dataTypeValues, result, columns, i);
 		}
 		result.close();
 		
-		Map<IndexInfo, Set<String>> indexMap = new LinkedHashMap<>();
+		final Map<IndexInfo, Set<String>> indexMap = new LinkedHashMap<>();
 		int count = UNKNOWN_ROW_COUNT;
 		
 		if(table.getType() == TableType.TABLE)
 		{
-			Set<String> primaryKeyColumns = new HashSet<>();
-			rs = meta.getPrimaryKeys(catalog,schema,tableName);
+			final Set<String> primaryKeyColumns = new HashSet<>();
+			rs = meta.getPrimaryKeys(catalog, schema, tableName);
 			
 			while(rs.next())
 			{
@@ -227,7 +247,7 @@ public class SQLiteJDBCMetaData extends JDBCMetaData
 				 * fix for issue XDEVAPI-154
 				 * the jdbc method #getPrimaryKeys return a lower case column name.
 				 */
-				for(ColumnMetaData colMetaData : columns)
+				for(final ColumnMetaData colMetaData : columns)
 				{
 					if(colMetaData.getName().equalsIgnoreCase(pkColName))
 					{
@@ -241,24 +261,25 @@ public class SQLiteJDBCMetaData extends JDBCMetaData
 			{
 				if(!primaryKeyColumns.isEmpty())
 				{
-					indexMap.put(new IndexInfo("PRIMARY_KEY",IndexType.PRIMARY_KEY),
-							primaryKeyColumns);
+					indexMap.put(
+						new IndexInfo("PRIMARY_KEY", IndexType.PRIMARY_KEY),
+						primaryKeyColumns);
 				}
 				
-				rs = meta.getIndexInfo(catalog,schema,tableName,false,true);
+				rs = meta.getIndexInfo(catalog, schema, tableName, false, true);
 				
 				while(rs.next())
 				{
-					String indexName = rs.getString("INDEX_NAME");
-					String columnName = rs.getString("COLUMN_NAME");
+					final String indexName = rs.getString("INDEX_NAME");
+					final String columnName = rs.getString("COLUMN_NAME");
 					if(indexName != null
 						&& columnName != null
 						&& !primaryKeyColumns.contains(columnName))
 					{
-						boolean unique = !rs.getBoolean("NON_UNIQUE");
-						IndexInfo info = new IndexInfo(indexName,unique ? IndexType.UNIQUE
-								: IndexType.NORMAL);
-						Set<String> columnNames = indexMap.computeIfAbsent(info, k -> new HashSet<String>());
+						final boolean unique = !rs.getBoolean("NON_UNIQUE");
+						final IndexInfo info = new IndexInfo(indexName, unique ? IndexType.UNIQUE
+							: IndexType.NORMAL);
+						final Set<String> columnNames = indexMap.computeIfAbsent(info, k -> new HashSet<>());
 						columnNames.add(columnName);
 					}
 				}
@@ -270,47 +291,40 @@ public class SQLiteJDBCMetaData extends JDBCMetaData
 				try
 				{
 					result = jdbcConnection.query(new SELECT().columns(Functions.COUNT()).FROM(
-							tableIdentity));
+						tableIdentity));
 					if(result.next())
 					{
 						count = result.getInt(0);
 					}
 					result.close();
 				}
-				catch(Exception e)
+				catch(final Exception e)
 				{
 					e.printStackTrace();
 				}
 			}
 		}
 		
-		Index[] indices = new Index[indexMap.size()];
+		final Index[] indices = new Index[indexMap.size()];
 		int i = 0;
-		for(IndexInfo indexInfo : indexMap.keySet())
+		for(final IndexInfo indexInfo : indexMap.keySet())
 		{
 			fillIndices(indexMap, indices, i, indexInfo);
 			i++;
 		}
 		
-		return new TableMetaData(table,columns,indices,count);
-	}
-	
-	private static void fillIndices(Map<IndexInfo, Set<String>> indexMap, Index[] indices, int i, IndexInfo indexInfo)
-	{
-		Set<String> columnList = indexMap.get(indexInfo);
-		String[] indexColumns = columnList.toArray(new String[columnList.size()]);
-		indices[i] = new Index(indexInfo.name, indexInfo.type,indexColumns);
+		return new TableMetaData(table, columns, indices, count);
 	}
 	
 	private void fillColumnMetaData(
-		String tableName,
-		Map<String, Object> defaultValues,
-		Map<String, DataType> dataTypeValues,
-		Result result,
-		ColumnMetaData[] columns,
-		int i)
+		final String tableName,
+		final Map<String, Object> defaultValues,
+		final Map<String, DataType> dataTypeValues,
+		final Result result,
+		final ColumnMetaData[] columns,
+		final int i)
 	{
-		ColumnMetaData column = result.getMetadata(i);
+		final ColumnMetaData column = result.getMetadata(i);
 		Object defaultValue = column.getDefaultValue();
 		
 		if(defaultValue == null && defaultValues.containsKey(column.getName()))
@@ -318,7 +332,7 @@ public class SQLiteJDBCMetaData extends JDBCMetaData
 			defaultValue = defaultValues.get(column.getName());
 		}
 		
-		defaultValue = checkDefaultValue(defaultValue,column);
+		defaultValue = this.checkDefaultValue(defaultValue, column);
 		
 		// column.getName() is not always correct sometimes it returns
 		// VARCHAR but it isnt. So take the result of the ResultSet above.
@@ -335,7 +349,6 @@ public class SQLiteJDBCMetaData extends JDBCMetaData
 				defaultValue,
 				column.isNullable(),
 				column.isAutoIncrement());
-			
 		}
 		else
 		{
@@ -349,68 +362,52 @@ public class SQLiteJDBCMetaData extends JDBCMetaData
 				defaultValue,
 				column.isNullable(),
 				column.isAutoIncrement());
-			
 		}
 	}
 	
-	private static void fillDataTypeValues(Map<String, Object> defaultValues, Map<String, DataType> dataTypeValues, ResultSet rs)
-		throws SQLException
-	{
-		final String columnName = rs.getString("COLUMN_NAME");
-		final Object defaultValue = rs.getObject("COLUMN_DEF");
-		defaultValues.put(columnName,defaultValue);
-		final int dataTypeValue = rs.getInt("DATA_TYPE");
-		final DataType dataType = DataType.get(dataTypeValue);
-		
-		dataTypeValues.put(columnName,dataType);
-	}
-	
 	@Override
-	public boolean equalsType(ColumnMetaData clientColumn, ColumnMetaData dbColumn)
+	public boolean equalsType(final ColumnMetaData clientColumn, final ColumnMetaData dbColumn)
 	{
 		return false;
 	}
 	
-	
 	@Override
-	protected void createTable(JDBCConnection jdbcConnection, TableMetaData table)
-			throws DBException, SQLException
+	protected void createTable(final JDBCConnection jdbcConnection, final TableMetaData table)
+		throws DBException, SQLException
 	{
 	}
 	
-	
 	@Override
-	protected void addColumn(JDBCConnection jdbcConnection, TableMetaData table,
-			ColumnMetaData column, ColumnMetaData columnBefore, ColumnMetaData columnAfter)
-			throws DBException, SQLException
+	protected void addColumn(
+		final JDBCConnection jdbcConnection, final TableMetaData table,
+		final ColumnMetaData column, final ColumnMetaData columnBefore, final ColumnMetaData columnAfter)
+		throws DBException, SQLException
 	{
 	}
 	
-	
 	@Override
-	protected void alterColumn(JDBCConnection jdbcConnection, TableMetaData table,
-			ColumnMetaData column, ColumnMetaData existing) throws DBException, SQLException
+	protected void alterColumn(
+		final JDBCConnection jdbcConnection, final TableMetaData table,
+		final ColumnMetaData column, final ColumnMetaData existing) throws DBException, SQLException
 	{
 	}
 	
-	
 	@Override
-	protected void dropColumn(JDBCConnection jdbcConnection, TableMetaData table,
-			ColumnMetaData column) throws DBException, SQLException
+	protected void dropColumn(
+		final JDBCConnection jdbcConnection, final TableMetaData table,
+		final ColumnMetaData column) throws DBException, SQLException
 	{
 	}
 	
-	
 	@Override
-	protected void createIndex(JDBCConnection jdbcConnection, TableMetaData table, Index index)
-			throws DBException, SQLException
+	protected void createIndex(final JDBCConnection jdbcConnection, final TableMetaData table, final Index index)
+		throws DBException, SQLException
 	{
 	}
 	
-	
 	@Override
-	protected void dropIndex(JDBCConnection jdbcConnection, TableMetaData table, Index index)
-			throws DBException, SQLException
+	protected void dropIndex(final JDBCConnection jdbcConnection, final TableMetaData table, final Index index)
+		throws DBException, SQLException
 	{
 	}
 }

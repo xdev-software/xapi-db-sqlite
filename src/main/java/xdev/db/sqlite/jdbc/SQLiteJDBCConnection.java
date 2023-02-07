@@ -17,9 +17,6 @@
  */
 package xdev.db.sqlite.jdbc;
 
-
-
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -40,96 +37,88 @@ import xdev.vt.XdevClob;
 
 public class SQLiteJDBCConnection extends JDBCConnection<SQLiteJDBCDataSource, SQLiteDbms>
 {
-	public SQLiteJDBCConnection(SQLiteJDBCDataSource dataSource)
+	public SQLiteJDBCConnection(final SQLiteJDBCDataSource dataSource)
 	{
 		super(dataSource);
 	}
 	
 	/**
-	 * Original method had a bug (see issue 13769).
-	 * We are solving this here. If you have any problems using this adapter, try to delete
-	 * JDBCResult(int, scale, final ResultSet rs)
+	 * Original method had a bug (see issue 13769). We are solving this here. If you have any problems using this
+	 * adapter, try to delete JDBCResult(int, scale, final ResultSet rs)
 	 */
 	@Override
-	public JDBCResult query(String sql, Integer offset, Integer maxRowCount, Object... params)
-			throws DBException
+	public JDBCResult query(final String sql, final Integer offset, final Integer maxRowCount, final Object... params)
+		throws DBException
 	{
 		try
 		{
-			ResultSet rs = queryJDBC(sql,params);
+			final ResultSet rs = this.queryJDBC(sql, params);
 			
-			JDBCResult result;
+			final JDBCResult result;
 			if((offset != null || maxRowCount != null)
-					&& !gateway.getDbmsAdaptor().supportsOFFSET_ROWS())
+				&& !this.gateway.getDbmsAdaptor().supportsOFFSET_ROWS())
 			{
-				result = new JDBCResult(rs,offset != null ? offset : 0,0,maxRowCount);
+				result = new JDBCResult(rs, offset != null ? offset : 0, 0, maxRowCount);
 			}
 			else
 			{
-				result = new JDBCResult(0,rs);
+				result = new JDBCResult(0, rs);
 			}
-			result.setDataSource(dataSource);
+			result.setDataSource(this.dataSource);
 			return result;
 		}
-		catch(DBException e)
+		catch(final DBException e)
 		{
 			throw e;
 		}
-		catch(Exception e)
+		catch(final Exception e)
 		{
-			throw new DBException(dataSource,e);
+			throw new DBException(this.dataSource, e);
 		}
 	}
 	
 	/**
 	 * This Method is fix for issue 13769.
-	 * @param select
-	 *            an {@link SELECT} statement to be sent to the database,
-	 *            typically a static SQL <code>SELECT</code> statement
 	 *
-	 * @param params
-	 *            the parameter values for the given <code>select</code>
-	 *
+	 * @param select an {@link SELECT} statement to be sent to the database, typically a static SQL <code>SELECT</code>
+	 *               statement
+	 * @param params the parameter values for the given <code>select</code>
 	 */
 	@Override
-	public JDBCResult query(SELECT select, Object... params) throws DBException
+	public JDBCResult query(final SELECT select, final Object... params) throws DBException
 	{
-		decorateDelegate(select,gateway);
+		this.decorateDelegate(select, this.gateway);
 		
-		Integer offset = select.getOffsetSkipCount();
+		final Integer offset = select.getOffsetSkipCount();
 		Integer limit = select.getFetchFirstRowCount();
 		
-		if(!gateway.getDbmsAdaptor().supportsOFFSET_ROWS() && offset != null && offset > 0
-				&& limit != null && limit > 0)
+		if(!this.gateway.getDbmsAdaptor().supportsOFFSET_ROWS() && offset != null && offset > 0
+			&& limit != null && limit > 0)
 		{
 			limit += offset;
 			select.FETCH_FIRST(limit);
 		}
 		
-		String sql = select.toString();
-		JDBCResult result = query(sql,offset,limit,params);
-		result.setQueryInfo(new QueryInfo(select,params));
+		final String sql = select.toString();
+		final JDBCResult result = this.query(sql, offset, limit, params);
+		result.setQueryInfo(new QueryInfo(select, params));
 		return result;
 	}
 	
 	/**
-	 *  This Method is fix for issue 13769.
-	 * @param sql
-	 *            an SQL String to be sent to the database
+	 * This Method is fix for issue 13769.
 	 *
-	 * @param params
-	 *            the parameter values for the given <code>sql</code>
-	 *
+	 * @param sql    an SQL String to be sent to the database
+	 * @param params the parameter values for the given <code>sql</code>
 	 */
 	@Override
-	public JDBCResult query(String sql, Object... params) throws DBException
+	public JDBCResult query(final String sql, final Object... params) throws DBException
 	{
-		return query(sql,null,null,params);
+		return this.query(sql, null, null, params);
 	}
 	
-	
 	@Override
-	protected void prepareParams(Connection connection, Object[] params) throws DBException
+	protected void prepareParams(final Connection connection, final Object[] params) throws DBException
 	{
 		if(params == null)
 		{
@@ -138,7 +127,7 @@ public class SQLiteJDBCConnection extends JDBCConnection<SQLiteJDBCDataSource, S
 		
 		for(int i = 0; i < params.length; i++)
 		{
-			Object param = params[i];
+			final Object param = params[i];
 			if(param == null)
 			{
 				continue;
@@ -155,7 +144,7 @@ public class SQLiteJDBCConnection extends JDBCConnection<SQLiteJDBCDataSource, S
 			else if(param instanceof XdevClob)
 			{
 				// transform clob to string
-				params[i] = ((XdevClob)param).toString();
+				params[i] = param.toString();
 			}
 			else if(param instanceof CharHolder)
 			{
@@ -172,22 +161,23 @@ public class SQLiteJDBCConnection extends JDBCConnection<SQLiteJDBCDataSource, S
 		}
 	}
 	
-	
 	@Override
-	public void createTable(String tableName, String primaryKey, Map<String, String> columnMap,
-			boolean isAutoIncrement, Map<String, String> foreignKeys) throws Exception
+	public void createTable(
+		final String tableName, final String primaryKey, final Map<String, String> columnMap,
+		final boolean isAutoIncrement, final Map<String, String> foreignKeys) throws Exception
 	{
 		
 		if(!columnMap.containsKey(primaryKey))
 		{
-			columnMap.put(primaryKey,"INTEGER"); //$NON-NLS-1$
+			columnMap.put(primaryKey, "INTEGER"); //$NON-NLS-1$
 		}
 		
-		StringBuffer createStatement = new StringBuffer("CREATE TABLE IF NOT EXISTS " + tableName //$NON-NLS-1$
-				+ "(" + primaryKey + " " + columnMap.get(primaryKey) + " PRIMARY KEY,"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		final StringBuffer createStatement = new StringBuffer("CREATE TABLE IF NOT EXISTS " + tableName //$NON-NLS-1$
+			+ "(" + primaryKey + " " + columnMap.get(primaryKey)
+			+ " PRIMARY KEY,"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 		
 		int i = 1;
-		for(String keySet : columnMap.keySet())
+		for(final String keySet : columnMap.keySet())
 		{
 			if(!keySet.equals(primaryKey))
 			{
@@ -197,7 +187,6 @@ public class SQLiteJDBCConnection extends JDBCConnection<SQLiteJDBCDataSource, S
 						.append(" ")
 						.append(columnMap.get(keySet))
 						.append(","); //$NON-NLS-1$ //$NON-NLS-2$
-					
 				}
 				else
 				{
@@ -205,25 +194,23 @@ public class SQLiteJDBCConnection extends JDBCConnection<SQLiteJDBCDataSource, S
 						.append(" ")
 						.append(columnMap.get(keySet))
 						.append(")"); //$NON-NLS-1$ //$NON-NLS-2$
-					
 				}
-				
 			}
 			i++;
 		}
 		
 		if(log.isDebugEnabled())
 		{
-			log.debug("SQL Statement to create a table: " + createStatement.toString()); //$NON-NLS-1$
+			log.debug("SQL Statement to create a table: " + createStatement); //$NON-NLS-1$
 		}
 		
-		Connection connection = super.getConnection();
-		Statement statement = connection.createStatement();
+		final Connection connection = super.getConnection();
+		final Statement statement = connection.createStatement();
 		try
 		{
 			statement.execute(createStatement.toString());
 		}
-		catch(Exception e)
+		catch(final Exception e)
 		{
 			throw e;
 		}
@@ -233,5 +220,4 @@ public class SQLiteJDBCConnection extends JDBCConnection<SQLiteJDBCDataSource, S
 			connection.close();
 		}
 	}
-	
 }
