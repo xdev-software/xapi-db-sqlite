@@ -49,7 +49,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <xdev.xapi.version>6.0.1</xdev.xapi.version>
+        <xdev.xapi.version>6.0.2</xdev.xapi.version>
     </properties>
 
     <repositories>
